@@ -10,10 +10,3 @@ jobs:
       - run:
         name: Test
         command: "cargo test"
-jobs:
-  build:
-    docker:
-      - image: cimg/rust:1.56.1
-    steps:
-      - checkout
-      - run: cargo --version
