@@ -3,10 +3,10 @@ version: 2.1
 orbs:
   codecov: codecov/codecov@3.2.2
 jobs:
-  build: 
-    docker: 
+  build:
+    docker:
       - image: cimg/rust:1.56.1
-    steps: 
+    steps:
       - checkout
       - run: cargo --version
       - run:
@@ -14,29 +14,33 @@ jobs:
           command: "cargo test"
       - run:
           name: apt-get
-          command: sudo apt-get update && sudo apt-get -y install lcov ruby 
-      - run:
-          name: rustup install nightly
-          command: rustup install nightly
-      - run:
-          name: cargo install grcov
           command: |
-            sudo gem install coveralls-lcov
-            cargo install grcov
+            set -eux
+            apt-get update
+            apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
       - run:
-          name: generate coverage
+          name: kcov
           command: |
-            rm -rf target/debug/deps/rpncalc-*
-            export CARGO_INCREMENTAL=0
-            export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-
-            cargo +nightly build --verbose
-            cargo +nightly test --verbose
-
-            grcov ./target/debug/deps -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
-
+            wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+            tar xzf master.tar.gz
+            cd kcov-master
+            mkdir build
+            cd build
+            cmake ..
+            make
+            make install DESTDIR=../../kcov-build
+            cd ../..
+            rm -rf kcov-master
+      - run:
+          name: test
+          command: |
+            export PATH=~/.cargo/bin:$PATH
+            cargo test
+      - run:
+          name: coverage
+          command: |
+            for file in target/debug/rpncalc-*[^\.d]; do 
+                mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+            done
             bash <(curl -s https://codecov.io/bash)
             echo "Uploaded code coverage"
-
-      - codecov/upload:
-          file: lcov.info
