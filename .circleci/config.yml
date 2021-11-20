@@ -15,9 +15,8 @@ jobs:
       - run:
           name: apt-get
           command: |
-            set -eux
-            apt-get update
-            apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
+            sudo apt-get update
+            sudo apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
       - run:
           name: kcov
           command: |
