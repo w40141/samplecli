@@ -11,7 +11,20 @@ jobs:
       - checkout
       - run: cargo --version
       - run:
-          name: Test
-          command: "cargo test"
+        name: Test
+        command: "cargo test"
       - codecov/upload:
-          file: ./coverage/lcov.info
+        file: ./coverage/lcov.info
+      - run:
+        name: kcov
+        command: |
+          wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+          tar xzf master.tar.gz
+          cd kcov-master
+          mkdir build
+          cd build
+          cmake ..
+          make
+          make install DESTDIR=../../kcov-build
+          cd ../..
+          rm -rf kcov-master
