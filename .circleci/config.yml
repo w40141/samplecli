@@ -2,40 +2,71 @@ version: 2.1
 
 orbs:
   codecov: codecov/codecov@3.2.2
-
 jobs:
-  build:
-    docker:
-      - image: cimg/rust:1.56.1
-    steps:
+  build: 
+    docker: 
+      - image: circleci/rust
+    steps: 
       - checkout
-      - run: cargo --version
       - run:
-          name: Test
-          command: "cargo test"
+          name: apt-get
+          command: sudo apt-get update && sudo apt-get -y install lcov ruby 
       - run:
-          name: kcov
+          name: rustup install nightly
+          command: rustup install nightly
+      - run:
+          name: cargo install grcov
           command: |
-            wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-            tar xzf master.tar.gz
-            cd kcov-master
-            mkdir build
-            cd build
-            cmake ..
-            make
-            make install DESTDIR=../../kcov-build
-            cd ../..
-            rm -rf kcov-master
+            sudo gem install coveralls-lcov
+            cargo install grcov
       - run:
-          name: coverage
+          name: generate coverage
           command: |
-            for file in target/debug/mican-*[^\.d]; do 
-                mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; 
-            done
-            bash <(curl -s https://codecov.io/bash)
-            echo "Uploaded code coverage"
-      # - run:
-      #     name: coverage
-      #     command: |
-      #       bash <(curl -s https://codecov.io/bash)
-      #       echo "Uploaded code coverage"
+            PROJ_NAME=$(cat Cargo.toml | grep -E "^name" | sed -E 's/name:space:=:space:"(.*)"//g' | sed -E 's/-/_/g')
+            rm -rf target/debug/deps/$(PROJ_NAME)-*
+            export CARGO_INCREMENTAL=0
+            export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+
+            cargo +nightly build --verbose
+            cargo +nightly test --verbose
+
+            grcov ./target/debug/deps -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
+
+      - codecov/upload:
+          file: lcov.info
+# jobs:
+#   build:
+#     docker:
+#       - image: cimg/rust:1.56.1
+#     steps:
+#       - checkout
+#       - run: cargo --version
+#       - run:
+#           name: Test
+#           command: "cargo test"
+#       - run:
+#           name: kcov
+#           command: |
+#             wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+#             tar xzf master.tar.gz
+#             cd kcov-master
+#             mkdir build
+#             cd build
+#             cmake ..
+#             make
+#             make install DESTDIR=../../kcov-build
+#             cd ../..
+#             rm -rf kcov-master
+#       - run:
+#           name: coverage
+#           command: |
+#             for file in target/debug/mican-*[^\.d]; do 
+#                 mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; 
+#             done
+#             bash <(curl -s https://codecov.io/bash)
+#             echo "Uploaded code coverage"
+#       # - run:
+#       #     name: coverage
+#       #     command: |
+#       #       bash <(curl -s https://codecov.io/bash)
+#       #       echo "Uploaded code coverage"
