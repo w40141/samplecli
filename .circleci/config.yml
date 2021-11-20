@@ -16,20 +16,20 @@ jobs:
       - run:
           name: cargo install grcov
           command: |
-            sudo gem install coveralls-lcov
-            cargo install grcov
+              sudo gem install coveralls-lcov
+              cargo install grcov
       - run:
           name: generate coverage
           command: |
-            PROJ_NAME=$(cat Cargo.toml | grep -E "^name" | sed -E 's/name:space:=:space:"(.*)"//g' | sed -E 's/-/_/g')
-            rm -rf target/debug/deps/$(PROJ_NAME)-*
-            export CARGO_INCREMENTAL=0
-            export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+              PROJ_NAME=$(cat Cargo.toml | grep -E "^name" | sed -E 's/name:space:=:space:"(.*)"//g' | sed -E 's/-/_/g')
+              rm -rf target/debug/deps/$(PROJ_NAME)-*
+              export CARGO_INCREMENTAL=0
+              export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
 
-            cargo +nightly build --verbose
-            cargo +nightly test --verbose
+              cargo +nightly build --verbose
+              cargo +nightly test --verbose
 
-            grcov ./target/debug/deps -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
+              grcov ./target/debug/deps -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
 
       - codecov/upload:
           file: lcov.info
