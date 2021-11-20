@@ -8,5 +8,5 @@ jobs:
       - checkout
       - run: cargo --version
       - run:
-        name: Test
-        command: "cargo test"
+          name: Test
+          command: "cargo test"
