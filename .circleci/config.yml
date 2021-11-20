@@ -1,67 +1,53 @@
-version: '2.1'
+version: 2.1
+
 orbs:
   codecov: codecov/codecov@3.2.2
-workflows:
-  upload-to-codecov:
-    jobs:
+
+jobs:
+  build:
+    docker:
+      - image: cimg/rust:1.56.1
+    steps:
       - checkout
-      - codecov/upload
-# jobs:
-#   build:
-#     docker:
-#       - image: ubuntu:latest
-# 
-#     working_directory: /opt/utam0k
-# 
-#     steps:
-#       - checkout
-#       - run:
-#           name: set up
-#           command: |
-#             set -eux
-#             apt-get update
-#             apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
-#       - run:
-#           name: preparation 
-#           command: |
-#             wget "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init"
-#             chmod +x rustup-init
-#             ./rustup-init -y --no-modify-path --default-toolchain nightly
-#             RUSTUP=~/.cargo/bin/rustup
-#             CARGO=~/.cargo/bin/cargo
-#             chmod -R a+w $RUSTUP $CARGO
-#             rm rustup-init
-#             source ~/.cargo/env
-#       - run:
-#           name: lint
-#           command: |
-#             export PATH=~/.cargo/bin:$PATH
-#             rustup install nightly-2018-05-16
-#             cargo +nightly-2018-05-16 install clippy --vers 0.0.200 --force
-#             cargo +nightly-2018-05-16 clippy --release -- -Dclippy_pedantic
-#       - run:
-#           name: kcov
-#           command: |
-#               wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-#               tar xzf master.tar.gz
-#               cd kcov-master
-#               mkdir build
-#               cd build
-#               cmake ..
-#               make
-#               make install DESTDIR=../../kcov-build
-#               cd ../..
-#               rm -rf kcov-master
-#       - run:
-#           name: test
-#           command: |
-#             export PATH=~/.cargo/bin:$PATH
-#             cargo test
-#       - run:
-#           name: coverage
-#           command: |
-#             for file in target/debug/rpncalc-*[^\.d]; do 
-#                 mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; 
-#             done
-#             bash <(curl -s https://codecov.io/bash)
-#             echo "Uploaded code coverage"
+      - run: cargo --version
+      - run:
+          name: set up
+          command: |
+            set -eux
+            sudo apt-get update
+            sudo apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
+      # - run:
+      #     name: Test
+      #     command: "cargo test"
+      # - run:
+      #     name: coverage
+      #     command: |
+      #       sudo apt 
+      #       bash <(curl -s https://codecov.io/bash) &&
+      #       echo "Uploaded code coverage"
+      - run:
+          name: kcov
+          command: |
+              wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+              tar xzf master.tar.gz
+              cd kcov-master
+              mkdir build
+              cd build
+              cmake ..
+              make
+              make install DESTDIR=../../kcov-build
+              cd ../..
+              rm -rf kcov-master
+      - run:
+          name: test
+          command: |
+            export PATH=~/.cargo/bin:$PATH
+            cargo test
+      - run:
+          name: coverage
+          command: |
+            for file in target/debug/rpncalc-*[^\.d]; do 
+                mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; 
+            done
+            bash <(curl -s https://codecov.io/bash)
+            echo "Uploaded code coverage"
