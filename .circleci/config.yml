@@ -2,52 +2,15 @@ version: 2.1
 
 orbs:
   codecov: codecov/codecov@3.2.2
+  rust: circleci/rust@1.6.0
 
-jobs:
-  build:
-    docker:
-      - image: cimg/rust:1.56.1
-    steps:
+workflows:
+  production:
+    jobs:
+      - rust/lint-test-build:
+          release: true
+
+  upload-to-codecov:
+    jobs:
       - checkout
-      - run: cargo --version
-      - run:
-          name: set up
-          command: |
-            set -eux
-            sudo apt-get update
-            sudo apt-get install -y wget build-essential libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev cmake libiberty-dev pkg-config zlib1g-dev python curl
-      # - run:
-      #     name: Test
-      #     command: "cargo test"
-      # - run:
-      #     name: coverage
-      #     command: |
-      #       sudo apt 
-      #       bash <(curl -s https://codecov.io/bash) &&
-      #       echo "Uploaded code coverage"
-      - run:
-          name: kcov
-          command: |
-              wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-              tar xzf master.tar.gz
-              cd kcov-master
-              mkdir build
-              cd build
-              cmake ..
-              make
-              make install DESTDIR=../../kcov-build
-              cd ../..
-              rm -rf kcov-master
-      - run:
-          name: test
-          command: |
-            export PATH=~/.cargo/bin:$PATH
-            cargo test
-      - run:
-          name: coverage
-          command: |
-            for file in target/debug/rpncalc-*[^\.d]; do 
-                mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; 
-            done
-            bash <(curl -s https://codecov.io/bash)
-            echo "Uploaded code coverage"
+      - codecov/upload
