@@ -9,8 +9,3 @@ workflows:
     jobs:
       - rust/lint-test-build:
           release: true
-
-  upload-to-codecov:
-    jobs:
-      - checkout
-      - codecov/upload
