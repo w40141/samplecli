@@ -1,8 +1,8 @@
 use anyhow::{bail, ensure, Context, Result};
-use std::path::PathBuf;
-use clap::Clap;
+use clap::Parser;
 use std::fs::File;
 use std::io::{stdin, BufRead, BufReader};
+use std::path::PathBuf;
 
 struct RpnCalculator(bool);
 
@@ -49,7 +49,7 @@ impl RpnCalculator {
     }
 }
 
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(
     name = "My PRN program",
     version = "1.0.0",
