@@ -4,12 +4,20 @@ orbs:
   codecov: codecov/codecov@3.2.2
   rust: circleci/rust@1.6.0
 
-workflows:
-  production:
-    jobs:
+jobs:
+  rust-all-setup:
       - rust/lint-test-build:
           version: 1.56.1
   upload-to-codecov:
-    jobs:
+    step:
       - checkout
       - codecov/upload
+
+workflows:
+  versino: 2
+  build-and-codecov:
+    jobs:
+      - rust-all-setup
+      - upload-to-codecov:
+          requires:
+            - rust-all-setup
