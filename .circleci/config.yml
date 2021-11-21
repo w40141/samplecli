@@ -8,4 +8,4 @@ workflows:
   production:
     jobs:
       - rust/lint-test-build:
-          release: true
+          version: 1.56.1
